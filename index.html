@@ -9,13 +9,14 @@
     <div id='jukebox'></div>
     <h3>What?</h3>
     <a href="http://www.pouet.net/prod.php?which=53615">Sonant</a> is a minimalistic synth/music player by Ferris / Youth Uprising
-    meant for creating the music of <a href="http://en.wikipedia.org/wiki/Demo_(computer_programming)">4k Intros</a>.
+    meant for creating the music of <a href="http://en.wikipedia.org/wiki/Demo_(computer_programming)#Intros">4k Intros</a>.
     <br>This here is a proof-of-concept player for this song format using only WebAudio nodes. (ie. no javascript audio processing)
     So far, I have only tested it in Chrome, so it might not work quite yet in other browsers.
     <br>The resulting sound is not 100% accurate compared to the original, but it gets quite close.
     <br>Please note that this is not the best example for a WebAudio synth, as the synth design was optimized
     for a tiny asm/c playback routine and matching it with WebAudio nodes results in a somewhat convoluted graph.
     <br>See also <a href="http://sonantlive.bitsnbites.eu/">Sonant Live</a>, which was the inspiration for this player.
+    <br>Player source code can be found in the <a href="http://github.com/exoticorn/sonant-webaudio">GitHub repo</a>.
     <h3>Node lifetimes?</h3>
     The player contains this glorious code, executed for each note:
     <pre>
