@@ -1,6 +1,6 @@
 "use strict";
 
-function player(song) {
+function player(song, onEnd) {
   var context = new AudioContext();
 
   var time = 0.1;
@@ -77,7 +77,7 @@ function player(song) {
     delayGain.connect(delay);
     master.connect(context.destination);
     
-    return { master: master, lfo: lfoOut, data: inst };
+    return { master: master, lfo: lfoOut, delayGain: delayGain, data: inst };
   });
   
   function getNoteFreq(n) {
@@ -228,16 +228,27 @@ function player(song) {
       if(++patternIndex >= 32) {
         patternIndex = 0;
         ++sequenceIndex;
-//        stop = true;
       }
     }
     if(rowTime < endTime && !stop) {
       setTimeout(updateMusic, 250);
+    } else {
+      insts.forEach(function(inst) {
+        inst.master.disconnect();
+        inst.delayGain.disconnect();
+      });
+      if(onEnd) {
+        onEnd();
+      }
     }
   }
 
   updateMusic();
-//  playNote(insts[2], 123, 0.1);
+  
+  return {
+    stop: function() {
+      console.log('stopping');
+      stop = true;
+    }
+  };
 }
-
-player(song);
