@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+  <header>
+    <meta charset="UTF-8">
+    <title>Sonant WebAudio Player</title>
+  </header>
+  <body>
+    <h2>Sonant WebAudio Player</h2>
+    <div id='jukebox'></div>
+    <h3>What?</h3>
+    <a href="http://www.pouet.net/prod.php?which=53615">Sonant</a> is a minimalistic synth/music player by Ferris / Youth Uprising
+    meant for creating the music of <a href="http://en.wikipedia.org/wiki/Demo_(computer_programming)">4k Intros</a>.
+    <br>This here is a proof-of-concept player for this song format using only WebAudio nodes. (ie. no javascript audio processing)
+    So far, I have only tested it in Chrome, so it might not work quite yet in other browsers.
+    <br>The resulting sound is not 100% accurate compared to the original, but it gets quite close.
+    <br>Please note that this is not the best example for a WebAudio synth, as the synth design was optimized
+    for a tiny asm/c playback routine and matching it with WebAudio nodes results in a somewhat convoluted graph.
+    <br>See also <a href="http://sonantlive.bitsnbites.eu/">Sonant Live</a>, which was the inspiration for this player.
+    <h3>Node lifetimes?</h3>
+    The player contains this glorious code, executed for each note:
+    <pre>
+    setTimeout(function() {
+      // this should happen automatically, but without this, chrome eventually runs out of CPU time
+      merger.disconnect();
+    }, (endTime - context.currentTime) * 1000);
+    </pre>
+    As far as I can tell, the upstream graph of the merger node contains no circles, and the oscillators are stopped at the
+    end of the note (and just disconnecting them does not help). So in my understanding, the nodes should get cleaned up
+    automatically. A bug, maybe?
+    <script src="http://fb.me/react-0.10.0.min.js"></script>
+    <script src="ambidumbi.js"></script>
+    <script src="microscope.js"></script>
+    <script src="poseidon.js"></script>
+    <script src="chill.js"></script>
+    <script src="fabrik.js"></script>
+    <script src="synth4k.js"></script>
+    <script src="player.js"></script>
+    <script>
+      var songs = [
+        {
+          name: 'Ambidumbi',
+          author: 'Gargaj / Ümlaüt Design',
+          demo: { name: 'Moun Baryon', link: 'http://pouet.net/prod.php?which=53605' },
+          data: ambidumbi
+        }, {
+          name: 'Microscope',
+          author: 'Ferris / Youth Uprising',
+          demo: { name: 'Lesser', link: 'http://pouet.net/prod.php?which=53547' },
+          data: microscope
+        }, {
+          name: 'Chill',
+          author: 'Ferris / Youth Uprising',
+          data: chill
+        }, {
+          name: 'Poseidon demo song',
+          author: 'Ferris / Youth Uprising',
+          data: poseidon
+        }, {
+          name: 'Fabrik',
+          author: 'wullon / adinpsz',
+          demo: { name: 'Fabrik', link: 'http://www.pouet.net/prod.php?which=59071' },
+          data: fabrik
+        }, {
+          name: 'Synth 4k',
+          author: "m / Bits'n'Bites",
+          demo: { name: 'Synth 4k', link: 'http://synth.bitsnbites.eu/' },
+          data: synth4k
+        }
+      ];
+      
+      var DOM = React.DOM;
+      var Song = React.createClass({
+        componentDidMount: function() {
+          this.updatePlayer(false);
+        },
+        componentWillUpdate: function(props) {
+          this.updatePlayer(props.playing);
+        },
+        componentWillUnmount: function() {
+          if(this.player) {
+            this.player.stop();
+            delete this.player;
+          }
+        },
+        updatePlayer: function(playing) {
+          if(playing) {
+            if(!this.player) {
+              this.player = player(this.props.song.data, this.onEnd);
+            }
+          } else if(this.player) {
+            this.player.stop();
+          }
+        },
+        onEnd: function() {
+          delete this.player;
+          this.props.stop();
+          this.forceUpdate();
+        },
+        render: function() {
+          return DOM.p(null,
+            this.props.playing ?
+              DOM.button({ onClick: this.props.stop }, 'Stop') :
+              DOM.button({
+                onClick: this.props.start,
+                disabled: this.player
+              }, this.player ? 'Stopping' : 'Start'),
+            DOM.b(null, this.props.song.name),
+            ' by ' + this.props.song.author,
+            this.props.song.demo ?
+              DOM.span(null,
+                ' (Used in the demo ',
+                DOM.a({ href: this.props.song.demo.link }, this.props.song.demo.name),
+                ')') :
+              ''
+          );
+        }
+      });
+      
+      var Jukebox = React.createClass({
+        getInitialState: function() { return {}; },
+        start: function(song) {
+          this.setState({ playing: song });
+        },
+        stop: function(song) {
+          if(this.state.playing === song) {
+            this.setState({ playing: undefined });
+          }
+        },
+        render: function() {
+          return DOM.div(null,
+            this.props.songs.map(function(song) {
+              return Song({
+                song: song,
+                playing: this.state.playing === song,
+                start: this.start.bind(this, song),
+                stop: this.stop.bind(this, song)
+              });
+            }, this)
+          );
+        }
+      });
+      React.renderComponent(Jukebox({ songs: songs }), document.getElementById('jukebox'));
+    </script>
+  </body>
+</html>
